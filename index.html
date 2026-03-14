@@ -6,7 +6,6 @@
 <title>Folla de Avaliación</title>
 
 <style>
-    /* Optimizaciones para impresión y PDF */
     @media print {
         body { margin: 0; padding: 0; }
         .container { box-shadow: none; border: none; }
@@ -117,33 +116,42 @@ function determinarGanador() {
 
 function descargarPDF() {
     const btnContainer = document.querySelector('.btn-area');
-    btnContainer.style.display = 'none'; 
+    btnContainer.style.display = 'none';
 
     const ronda = document.getElementById("ronda").value;
     const sala = document.getElementById("sala").value;
     const teamA = document.getElementById("teamA").value || "A";
     const teamB = document.getElementById("teamB").value || "B";
-    
+
     const nombreArchivo = `${ronda}_${sala}_${teamA}_vs_${teamB}.pdf`.replace(/\s+/g, '_');
 
     const elemento = document.querySelector(".container");
-    element.style.transform = "scale(0.80)"; 
-    element.style.transformOrigin = "top center";
-    
+
+    // Guardamos el estilo original completo
+    const estiloOriginal = elemento.getAttribute('style') || '';
+
+    // Ajustamos temporalmente el contenedor para que quepa en A4
+    elemento.style.width = '720px';
+    elemento.style.boxShadow = 'none';
+    elemento.style.borderRadius = '0';
+    elemento.style.margin = '0';
+
     const opciones = {
-        margin: [5, 5, 5, 5], // Margen mínimo para aprovechar espacio
+        margin: [8, 8, 8, 8],
         filename: nombreArchivo,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { 
-            scale: 2, 
-            letterRendering: true,
-            useCORS: true
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            scrollX: 0,
+            scrollY: 0,
+            windowWidth: document.documentElement.scrollWidth
         },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } // Evita cortes raros en medio de filas
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     html2pdf().set(opciones).from(elemento).save().then(() => {
+        elemento.setAttribute('style', estiloOriginal);
         btnContainer.style.display = 'block';
     });
 }
