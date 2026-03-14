@@ -6,20 +6,31 @@
 <title>Folla de Avaliación</title>
 
 <style>
-    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f8f8; }
-    h1 { color: #0056b3; text-align: center; }
-    .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
-    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-    th { background-color: #0056b3; color: white; }
+    /* Optimizaciones para impresión y PDF */
+    @media print {
+        body { margin: 0; padding: 0; }
+        .container { box-shadow: none; border: none; }
+    }
+
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f8f8; color: #333; }
+    h1 { color: #0056b3; text-align: center; margin-bottom: 10px; }
+    .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); width: 800px; margin: auto; }
+    
+    table { width: 100%; border-collapse: collapse; margin-bottom: 15px; table-layout: fixed; }
+    th, td { border: 1px solid #ccc; padding: 8px; text-align: left; word-wrap: break-word; }
+    th { background-color: #0056b3; color: white; font-size: 13px; }
     .header-row { background-color: #f0f0f0; }
-    select, input[type="text"], input[type="number"] { width: 100%; font-size: 1em; padding: 5px; box-sizing: border-box; }
-    .tag-container { display: flex; flex-wrap: wrap; gap: 5px; border: 1px solid #ccc; padding: 5px; border-radius: 4px; background: #f9f9f9; min-height: 35px; margin-top: 5px; }
-    .tag { display: flex; align-items: center; background: #0056b3; color: white; padding: 5px 10px; border-radius: 4px; font-size: 13px; }
-    .tag .remove { margin-left: 8px; cursor: pointer; font-weight: bold; }
+    
+    select, input[type="text"], input[type="number"] { width: 100%; font-size: 13px; padding: 4px; box-sizing: border-box; }
+    
+    .tag-container { display: flex; flex-wrap: wrap; gap: 4px; border: 1px solid #ccc; padding: 4px; border-radius: 4px; background: #f9f9f9; min-height: 30px; }
+    .tag { display: flex; align-items: center; background: #0056b3; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; }
+    .tag .remove { margin-left: 6px; cursor: pointer; font-weight: bold; }
+    
     button { padding: 10px 20px; background: #0047AB; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
-    button:hover { background: #003580; }
-    textarea { width: 100%; font-size: 14px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+    textarea { width: 100%; font-size: 12px; padding: 8px; box-sizing: border-box; border: 1px solid #ccc; resize: none; }
+
+    #winner-display { padding: 15px; background-color: #0047AB; color: white; font-weight: bold; border-radius: 10px; font-size: 14px; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -116,12 +127,18 @@ function descargarPDF() {
     const nombreArchivo = `${ronda}_${sala}_${teamA}_vs_${teamB}.pdf`.replace(/\s+/g, '_');
 
     const elemento = document.querySelector(".container");
+    
     const opciones = {
-        margin: 10,
+        margin: [5, 5, 5, 5], // Margen mínimo para aprovechar espacio
         filename: nombreArchivo,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2 },
-        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+        html2canvas: { 
+            scale: 2, 
+            letterRendering: true,
+            useCORS: true
+        },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+        pagebreak: { mode: ['avoid-all', 'css', 'legacy'] } // Evita cortes raros en medio de filas
     };
 
     html2pdf().set(opciones).from(elemento).save().then(() => {
@@ -137,30 +154,23 @@ function descargarPDF() {
 <div class="container">
     <table>
         <tr class="header-row">
-            <td>
-                <strong>CATEGORÍA:</strong>
+            <td><strong>CATEGORÍA:</strong>
                 <select id="category">
                     <option value="">Seleccione</option>
                     <option value="Secundaria">Secundaria</option>
                     <option value="Bachillerato">Bachillerato</option>
                 </select>
             </td>
-            <td>
-                <strong>RONDA:</strong>
+            <td><strong>RONDA:</strong>
                 <select id="ronda">
                     <option value="Ronda">Seleccione</option>
-                    <option value="Ronda_1">Ronda 1</option>
-                    <option value="Ronda_2">Ronda 2</option>
-                    <option value="Ronda_3">Ronda 3</option>
-                    <option value="Ronda_4">Ronda 4</option>
-                    <option value="Ronda_5">Ronda 5</option>
-                    <option value="Cuartos">Cuartos de Final</option>
-                    <option value="Semifinal">Semifinal</option>
-                    <option value="Final">Final</option>
+                    <option value="Ronda_1">Ronda 1</option><option value="Ronda_2">Ronda 2</option>
+                    <option value="Ronda_3">Ronda 3</option><option value="Ronda_4">Ronda 4</option>
+                    <option value="Ronda_5">Ronda 5</option><option value="Cuartos">Cuartos</option>
+                    <option value="Semifinal">Semifinal</option><option value="Final">Final</option>
                 </select>
             </td>
-            <td>
-                <strong>SALA:</strong>
+            <td><strong>SALA:</strong>
                 <select id="sala">
                     <option value="Sala">Seleccione</option>
                     <option value="Sala_1">Sala 1</option><option value="Sala_2">Sala 2</option>
@@ -176,34 +186,34 @@ function descargarPDF() {
                 </select>
             </td>
         </tr>
-        <tr><td colspan="3"><strong>XUÍZ PRINCIPAL:</strong> <input type="text"></td></tr>
+        <tr><td colspan="3"><strong>XUÍZ:</strong> <input type="text"></td></tr>
         <tr><td colspan="3"><strong>EQUIPO A FAVOR:</strong> <input type="text" id="teamA"></td></tr>
         <tr><td colspan="3"><strong>EQUIPO EN CONTRA:</strong> <input type="text" id="teamB"></td></tr>
     </table>
 
     <table>
         <tr>
-            <th>ÍTEM (do 0 ao 10)</th>
+            <th style="width: 60%;">ÍTEM (do 0 ao 10)</th>
             <th>A FAVOR</th>
             <th>EN CONTRA</th>
         </tr>
         <tr>
-            <td>Establece un marco para o debate ou adáptase ao marco proposto?</td>
+            <td>Establece un marco para o debate ou adáptase ao proposto?</td>
             <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
             <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
         </tr>
         <tr>
-            <td>Os argumentos presentados son relevantes e verosímiles?</td>
+            <td>Os argumentos son relevantes e verosímiles?</td>
             <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
             <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
         </tr>
         <tr>
-            <td>O conxunto do seu caso é suficiente para probar a súa postura?</td>
+            <td>O caso é suficiente para probar a súa postura?</td>
             <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
             <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
         </tr>
         <tr>
-            <td>As contrargumentacións restan relevancia aos argumentos contrarios?</td>
+            <td>As contrargumentacións restan relevancia aos contrarios?</td>
             <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
             <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
         </tr>
@@ -218,7 +228,7 @@ function descargarPDF() {
             <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
         </tr>
         <tr>
-            <td>Emprega a linguaxe non verbal de forma adecuada?</td>
+            <td>Emprega a linguaxe non verbal adecuadamente?</td>
             <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
             <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
         </tr>
@@ -227,20 +237,19 @@ function descargarPDF() {
             <td><select class="a-favor persuasivo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
             <td><select class="en-contra persuasivo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
         </tr>
-        <tr>
+        <tr class="header-row">
             <td><strong>Puntuación Total</strong></td>
             <td><input type="number" id="total-a-favor" value="0" readonly></td>
             <td><input type="number" id="total-en-contra" value="0" readonly></td>
         </tr>
         <tr>
-            <td>PENALIZACIÓNS</td>
+            <td><strong>PENALIZACIÓNS</strong></td>
             <td>
                 <select id="penalty-select1" onchange="addPenalty1()">
                     <option value="">Seleccione</option>
                     <option value="Aviso">Aviso</option>
                     <option value="Falta Leve">Falta Leve</option>
                     <option value="Falta Grave">Falta Grave</option>
-                    <option value="Falta Eliminatoria">Falta Eliminatoria</option>
                 </select>
                 <div id="penalty-container1" class="tag-container"></div>
             </td>
@@ -250,29 +259,26 @@ function descargarPDF() {
                     <option value="Aviso">Aviso</option>
                     <option value="Falta Leve">Falta Leve</option>
                     <option value="Falta Grave">Falta Grave</option>
-                    <option value="Falta Eliminatoria">Falta Eliminatoria</option>
                 </select>
                 <div id="penalty-container2" class="tag-container"></div>
             </td>
         </tr>
-        <tr>
+        <tr class="header-row">
             <td><strong>PUNTUACIÓN FINAL</strong></td>
-            <td><input type="number" id="puntuacion-final-a-favor" value="0" readonly></td>
-            <td><input type="number" id="puntuacion-final-en-contra" value="0" readonly></td>
+            <td><input type="number" id="puntuacion-final-a-favor" value="0" readonly style="font-weight:bold;"></td>
+            <td><input type="number" id="puntuacion-final-en-contra" value="0" readonly style="font-weight:bold;"></td>
         </tr>
     </table>
 
-    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;">
+    <div style="display: flex; gap: 15px; align-items: flex-start;">
         <div style="flex: 2;">
-            <h3 style="margin-top:0;">Incidencias</h3>
-            <textarea id="incidencias" rows="4"></textarea>
+            <h3 style="margin: 0 0 5px 0; font-size: 14px;">Incidencias</h3>
+            <textarea id="incidencias" rows="3"></textarea>
         </div>
         <div style="flex: 1; text-align: center;">
-            <div id="winner-display" style="padding: 20px; background-color: #0047AB; color: white; font-weight: bold; border-radius: 10px;">
-                Empate
-            </div>
-            <div class="btn-area" style="margin-top: 20px;">
-                <button onclick="descargarPDF()">Enviar e Descargar PDF</button>
+            <div id="winner-display">Empate</div>
+            <div class="btn-area" style="margin-top: 10px;">
+                <button onclick="descargarPDF()">Xerar PDF</button>
             </div>
         </div>
     </div>
