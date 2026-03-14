@@ -222,30 +222,33 @@ actualizarTotales();
 
 });
 
-function descargarPDF(){
+</script>
 
-const ronda=document.getElementById("ronda").value.replace(/\s/g,"_");
-const sala=document.getElementById("sala").value.replace(/\s/g,"_");
-const teamA=document.getElementById("teamA").value.replace(/\s/g,"_");
-const teamB=document.getElementById("teamB").value.replace(/\s/g,"_");
+<script>
+function descargarPDF() {
+    const ronda = document.getElementById("ronda")?.value || "Ronda";
+    const sala = document.getElementById("sala")?.value || "Sala";
+    const teamA = document.getElementById("teamA")?.value || "EquipoA";
+    const teamB = document.getElementById("teamB")?.value || "EquipoB";
+    const winner = document.getElementById("winner-display")?.innerText.replace("Ganador: ","") || "Empate";
 
-let nombreArchivo=`${ronda}_${sala}_${teamA}_vs_${teamB}.pdf`;
+    const nombreArchivo =
+        `${ronda}_${sala}_${teamA}_vs_${teamB}_${winner}`
+        .replace(/\s+/g,"_")
+        .replace(/[^\w\-]/g,"") + ".pdf";
 
-const elemento=document.querySelector(".container");
+    const elemento = document.querySelector(".container");
 
-const opciones={
-margin:10,
-filename:nombreArchivo,
-image:{type:'jpeg',quality:0.98},
-html2canvas:{scale:2},
-jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
-};
+    const opciones = {
+        margin:10,
+        filename:nombreArchivo,
+        image:{type:'jpeg',quality:0.98},
+        html2canvas:{scale:2},
+        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+    };
 
-html2pdf().set(opciones).from(elemento).save();
-
+    html2pdf().set(opciones).from(elemento).save();
 }
-
-
 </script>
 
 </head>
