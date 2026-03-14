@@ -90,7 +90,20 @@ select, input[type="text"] {
     font-weight: bold;
     color: #333;
 }
+
+button{
+padding:10px 20px;
+background:#0047AB;
+color:white;
+border:none;
+border-radius:5px;
+cursor:pointer;
+}
+
+	
 </style>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
 
@@ -206,6 +219,30 @@ select.addEventListener('change', actualizarTotales);
 });
 
 actualizarTotales();
+
+function descargarPDF(){
+
+const ronda=document.getElementById("ronda").value.replace(/\s/g,"_");
+const sala=document.getElementById("sala").value.replace(/\s/g,"_");
+const teamA=document.getElementById("teamA").value.replace(/\s/g,"_");
+const teamB=document.getElementById("teamB").value.replace(/\s/g,"_");
+
+let nombreArchivo=`${ronda}_${sala}_${teamA}_vs_${teamB}.pdf`;
+
+const elemento=document.querySelector(".container");
+
+const opciones={
+margin:10,
+filename:nombreArchivo,
+image:{type:'jpeg',quality:0.98},
+html2canvas:{scale:2},
+jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+};
+
+html2pdf().set(opciones).from(elemento).save();
+
+}
+
 
 });
 
@@ -630,22 +667,13 @@ actualizarTotales();
         </div>
     </div>
 
-    <!-- Botón de Enviar -->
-    <div id="boton-container" style="flex: 0;">
-        <button id="send-button" style="
-            padding: 10px 20px;
-            background-color: #0047AB;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            cursor: pointer;
-            margin-left: 20px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        ">Enviar</button>
-    </div>
+    <div>
+<button onclick="descargarPDF()">Enviar</button>
 </div>
 
+</div>
+
+</div>
 
 </body>
 </html>
