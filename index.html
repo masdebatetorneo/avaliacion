@@ -6,676 +6,276 @@
 <title>Folla de Avaliación</title>
 
 <style>
-body {
-    font-family: Arial, sans-serif;
-    margin: 20px;
-    background-color: #f8f8f8;
-}
-
-h1 {
-    color: #0056b3;
-    text-align: center;
-}
-
-.container {
-    background: white;
-    padding: 20px;
-    border-radius: 8px;
-    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-}
-
-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-th, td {
-    border: 1px solid #ccc;
-    padding: 10px;
-    text-align: left;
-}
-
-th {
-    background-color: #0056b3;
-    color: white;
-}
-
-.header-row {
-    background-color: #f0f0f0;
-}
-
-.input-cell {
-    background-color: white;
-}
-
-select, input[type="text"] {
-    width: 100%;
-    font-size: 1em;
-    padding: 5px;
-    box-sizing: border-box;
-}
-
-.tag-container {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    border: 1px solid #ccc;
-    padding: 5px;
-    border-radius: 4px;
-    background: #f9f9f9;
-}
-
-.tag {
-    display: flex;
-    align-items: center;
-    background: #0056b3;
-    color: white;
-    padding: 5px 10px;
-    border-radius: 4px;
-}
-
-.tag .remove {
-    margin-left: 8px;
-    cursor: pointer;
-    font-weight: bold;
-}
-
-#total-a-favor, #total-en-contra {
-    font-size: 1.1em;
-    color: #333;
-}
-
-#puntuacion-final-a-favor, #puntuacion-final-en-contra {
-    font-size: 1.5em;
-    font-weight: bold;
-    color: #333;
-}
-
-button{
-padding:10px 20px;
-background:#0047AB;
-color:white;
-border:none;
-border-radius:5px;
-cursor:pointer;
-}
-
-	
+    body { font-family: Arial, sans-serif; margin: 20px; background-color: #f8f8f8; }
+    h1 { color: #0056b3; text-align: center; }
+    .container { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0, 0, 0, 0.1); }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
+    th { background-color: #0056b3; color: white; }
+    .header-row { background-color: #f0f0f0; }
+    select, input[type="text"], input[type="number"] { width: 100%; font-size: 1em; padding: 5px; box-sizing: border-box; }
+    .tag-container { display: flex; flex-wrap: wrap; gap: 5px; border: 1px solid #ccc; padding: 5px; border-radius: 4px; background: #f9f9f9; min-height: 35px; margin-top: 5px; }
+    .tag { display: flex; align-items: center; background: #0056b3; color: white; padding: 5px 10px; border-radius: 4px; font-size: 13px; }
+    .tag .remove { margin-left: 8px; cursor: pointer; font-weight: bold; }
+    button { padding: 10px 20px; background: #0047AB; color: white; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+    button:hover { background: #003580; }
+    textarea { width: 100%; font-size: 14px; padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
 </style>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 <script>
-
 document.addEventListener('DOMContentLoaded', () => {
+    const allSelects = document.querySelectorAll('.a-favor, .en-contra');
+    allSelects.forEach(select => {
+        select.addEventListener('change', actualizarTotales);
+    });
+    document.getElementById('teamA').addEventListener('input', determinarGanador);
+    document.getElementById('teamB').addEventListener('input', determinarGanador);
+});
 
 function actualizarTotales() {
+    let totalAFavor = 0;
+    let totalEnContra = 0;
+    document.querySelectorAll('.a-favor').forEach(select => {
+        let val = parseInt(select.value) || 0;
+        totalAFavor += select.classList.contains('persuasivo') ? val * 3 : val;
+    });
+    document.querySelectorAll('.en-contra').forEach(select => {
+        let val = parseInt(select.value) || 0;
+        totalEnContra += select.classList.contains('persuasivo') ? val * 3 : val;
+    });
+    document.getElementById('total-a-favor').value = totalAFavor;
+    document.getElementById('total-en-contra').value = totalEnContra;
+    calcularPuntuacionFinalAFavor();
+    calcularPuntuacionFinalEnContra();
+}
 
-let totalAFavor = 0;
-let totalEnContra = 0;
+function addPenalty1() { addPenalty('penalty-select1', 'penalty-container1', calcularPuntuacionFinalAFavor); }
+function addPenalty2() { addPenalty('penalty-select2', 'penalty-container2', calcularPuntuacionFinalEnContra); }
 
-const selectsAFavor = document.querySelectorAll('.a-favor');
-const selectsEnContra = document.querySelectorAll('.en-contra');
-
-selectsAFavor.forEach(select => {
-totalAFavor += select.classList.contains('persuasivo')
-? (parseInt(select.value) || 0) * 3
-: parseInt(select.value) || 0;
-});
-
-selectsEnContra.forEach(select => {
-totalEnContra += select.classList.contains('persuasivo')
-? (parseInt(select.value) || 0) * 3
-: parseInt(select.value) || 0;
-});
-
-document.getElementById('total-a-favor').value = totalAFavor;
-document.getElementById('total-en-contra').value = totalEnContra;
-
-calcularPuntuacionFinalAFavor();
-calcularPuntuacionFinalEnContra();
+function addPenalty(selectId, containerId, callback) {
+    const select = document.getElementById(selectId);
+    const container = document.getElementById(containerId);
+    const value = select.value;
+    if (value) {
+        const tag = document.createElement('div');
+        tag.className = 'tag';
+        tag.dataset.value = value;
+        tag.innerHTML = `${value} <span class="remove" onclick="this.parentElement.remove(); ${callback.name}();">×</span>`;
+        container.appendChild(tag);
+        select.value = "";
+        callback();
+    }
 }
 
 function calcularPuntuacionFinalAFavor() {
-
-const totalAFavor = parseInt(document.getElementById('total-a-favor').value) || 0;
-const penaltiesAFavor = document.querySelectorAll('#penalty-container1 .tag');
-
-let penalizacionTotal = 0;
-
-penaltiesAFavor.forEach(tag => {
-
-switch (tag.dataset.value) {
-
-case 'Aviso': penalizacionTotal += 0; break;
-case 'Falta Leve': penalizacionTotal += 30; break;
-case 'Falta Grave': penalizacionTotal += 90; break;
-case 'Falta Eliminatoria': penalizacionTotal += 100; break;
-
-}
-
-});
-
-const puntuacionFinal = Math.max(totalAFavor - penalizacionTotal, 0);
-
-document.getElementById('puntuacion-final-a-favor').value = puntuacionFinal;
-
+    const total = parseInt(document.getElementById('total-a-favor').value) || 0;
+    let resta = 0;
+    document.querySelectorAll('#penalty-container1 .tag').forEach(tag => {
+        if(tag.dataset.value === 'Falta Leve') resta += 30;
+        if(tag.dataset.value === 'Falta Grave') resta += 90;
+        if(tag.dataset.value === 'Falta Eliminatoria') resta += 100;
+    });
+    document.getElementById('puntuacion-final-a-favor').value = Math.max(total - resta, 0);
+    determinarGanador();
 }
 
 function calcularPuntuacionFinalEnContra() {
-
-const totalEnContra = parseInt(document.getElementById('total-en-contra').value) || 0;
-const penaltiesEnContra = document.querySelectorAll('#penalty-container2 .tag');
-
-let penalizacionTotal = 0;
-
-penaltiesEnContra.forEach(tag => {
-
-switch (tag.dataset.value) {
-
-case 'Aviso': penalizacionTotal += 0; break;
-case 'Falta Leve': penalizacionTotal += 30; break;
-case 'Falta Grave': penalizacionTotal += 90; break;
-case 'Falta Eliminatoria': penalizacionTotal += 100; break;
-
-}
-
-});
-
-const puntuacionFinal = Math.max(totalEnContra - penalizacionTotal, 0);
-
-document.getElementById('puntuacion-final-en-contra').value = puntuacionFinal;
-
-determinarGanador();
+    const total = parseInt(document.getElementById('total-en-contra').value) || 0;
+    let resta = 0;
+    document.querySelectorAll('#penalty-container2 .tag').forEach(tag => {
+        if(tag.dataset.value === 'Falta Leve') resta += 30;
+        if(tag.dataset.value === 'Falta Grave') resta += 90;
+        if(tag.dataset.value === 'Falta Eliminatoria') resta += 100;
+    });
+    document.getElementById('puntuacion-final-en-contra').value = Math.max(total - resta, 0);
+    determinarGanador();
 }
 
 function determinarGanador() {
-
-const teamAName = document.getElementById("teamA").value;
-const teamBName = document.getElementById("teamB").value;
-
-const scoreA = parseFloat(document.getElementById("puntuacion-final-a-favor").value) || 0;
-const scoreB = parseFloat(document.getElementById("puntuacion-final-en-contra").value) || 0;
-
-let winnerMessage = "Empate";
-
-if (teamAName && teamBName) {
-
-if (scoreA > scoreB) {
-winnerMessage = `Ganador: ${teamAName}`;
-} else if (scoreA < scoreB) {
-winnerMessage = `Ganador: ${teamBName}`;
+    const teamA = document.getElementById("teamA").value || "A Favor";
+    const teamB = document.getElementById("teamB").value || "En Contra";
+    const scoreA = parseFloat(document.getElementById("puntuacion-final-a-favor").value) || 0;
+    const scoreB = parseFloat(document.getElementById("puntuacion-final-en-contra").value) || 0;
+    let msg = "Empate";
+    if (scoreA > scoreB) msg = `Ganador: ${teamA}`;
+    else if (scoreB > scoreA) msg = `Ganador: ${teamB}`;
+    document.getElementById("winner-display").innerText = msg;
 }
 
-}
-
-document.getElementById("winner-display").innerText = winnerMessage;
-}
-
-const allSelects = document.querySelectorAll('.a-favor, .en-contra');
-
-allSelects.forEach(select => {
-select.addEventListener('change', actualizarTotales);
-});
-
-actualizarTotales();
-
-});
-
-</script>
-
-<script>
 function descargarPDF() {
-    const ronda = document.getElementById("ronda")?.value || "Ronda";
-    const sala = document.getElementById("sala")?.value || "Sala";
-    const teamA = document.getElementById("teamA")?.value || "EquipoA";
-    const teamB = document.getElementById("teamB")?.value || "EquipoB";
-    const winner = document.getElementById("winner-display")?.innerText.replace("Ganador: ","") || "Empate";
+    const btnContainer = document.querySelector('.btn-area');
+    btnContainer.style.display = 'none'; 
 
-    const nombreArchivo =
-        `${ronda}_${sala}_${teamA}_vs_${teamB}_${winner}`
-        .replace(/\s+/g,"_")
-        .replace(/[^\w\-]/g,"") + ".pdf";
+    const ronda = document.getElementById("ronda").value;
+    const sala = document.getElementById("sala").value;
+    const teamA = document.getElementById("teamA").value || "A";
+    const teamB = document.getElementById("teamB").value || "B";
+    
+    const nombreArchivo = `${ronda}_${sala}_${teamA}_vs_${teamB}.pdf`.replace(/\s+/g, '_');
 
     const elemento = document.querySelector(".container");
-
     const opciones = {
-        margin:10,
-        filename:nombreArchivo,
-        image:{type:'jpeg',quality:0.98},
-        html2canvas:{scale:2},
-        jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}
+        margin: 10,
+        filename: nombreArchivo,
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
-    html2pdf().set(opciones).from(elemento).save();
+    html2pdf().set(opciones).from(elemento).save().then(() => {
+        btnContainer.style.display = 'block';
+    });
 }
 </script>
-
 </head>
-
 <body>
 
 <h1>FOLLA DE AVALIACIÓN</h1>
 
 <div class="container">
+    <table>
+        <tr class="header-row">
+            <td>
+                <strong>CATEGORÍA:</strong>
+                <select id="category">
+                    <option value="">Seleccione</option>
+                    <option value="Secundaria">Secundaria</option>
+                    <option value="Bachillerato">Bachillerato</option>
+                </select>
+            </td>
+            <td>
+                <strong>RONDA:</strong>
+                <select id="ronda">
+                    <option value="Ronda">Seleccione</option>
+                    <option value="Ronda_1">Ronda 1</option>
+                    <option value="Ronda_2">Ronda 2</option>
+                    <option value="Ronda_3">Ronda 3</option>
+                    <option value="Ronda_4">Ronda 4</option>
+                    <option value="Ronda_5">Ronda 5</option>
+                    <option value="Cuartos">Cuartos de Final</option>
+                    <option value="Semifinal">Semifinal</option>
+                    <option value="Final">Final</option>
+                </select>
+            </td>
+            <td>
+                <strong>SALA:</strong>
+                <select id="sala">
+                    <option value="Sala">Seleccione</option>
+                    <option value="Sala_1">Sala 1</option><option value="Sala_2">Sala 2</option>
+                    <option value="Sala_3">Sala 3</option><option value="Sala_4">Sala 4</option>
+                    <option value="Sala_5">Sala 5</option><option value="Sala_6">Sala 6</option>
+                    <option value="Sala_7">Sala 7</option><option value="Sala_8">Sala 8</option>
+                    <option value="Sala_9">Sala 9</option><option value="Sala_10">Sala 10</option>
+                    <option value="Sala_11">Sala 11</option><option value="Sala_12">Sala 12</option>
+                    <option value="Sala_13">Sala 13</option><option value="Sala_14">Sala 14</option>
+                    <option value="Sala_15">Sala 15</option><option value="Sala_16">Sala 16</option>
+                    <option value="Sala_17">Sala 17</option><option value="Sala_18">Sala 18</option>
+                    <option value="Sala_19">Sala 19</option><option value="Sala_20">Sala 20</option>
+                </select>
+            </td>
+        </tr>
+        <tr><td colspan="3"><strong>XUÍZ PRINCIPAL:</strong> <input type="text"></td></tr>
+        <tr><td colspan="3"><strong>EQUIPO A FAVOR:</strong> <input type="text" id="teamA"></td></tr>
+        <tr><td colspan="3"><strong>EQUIPO EN CONTRA:</strong> <input type="text" id="teamB"></td></tr>
+    </table>
 
-<table>
+    <table>
+        <tr>
+            <th>ÍTEM (do 0 ao 10)</th>
+            <th>A FAVOR</th>
+            <th>EN CONTRA</th>
+        </tr>
+        <tr>
+            <td>Establece un marco para o debate ou adáptase ao marco proposto?</td>
+            <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td>Os argumentos presentados son relevantes e verosímiles?</td>
+            <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td>O conxunto do seu caso é suficiente para probar a súa postura?</td>
+            <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td>As contrargumentacións restan relevancia aos argumentos contrarios?</td>
+            <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td>Fai unha lectura adecuada do debate?</td>
+            <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td>Usa a linguaxe paraverbal de forma efectiva?</td>
+            <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td>Emprega a linguaxe non verbal de forma adecuada?</td>
+            <td><select class="a-favor"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td>Como de persuasivo foi no conxunto do debate? (x3)</td>
+            <td><select class="a-favor persuasivo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+            <td><select class="en-contra persuasivo"><option value="0">0</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></td>
+        </tr>
+        <tr>
+            <td><strong>Puntuación Total</strong></td>
+            <td><input type="number" id="total-a-favor" value="0" readonly></td>
+            <td><input type="number" id="total-en-contra" value="0" readonly></td>
+        </tr>
+        <tr>
+            <td>PENALIZACIÓNS</td>
+            <td>
+                <select id="penalty-select1" onchange="addPenalty1()">
+                    <option value="">Seleccione</option>
+                    <option value="Aviso">Aviso</option>
+                    <option value="Falta Leve">Falta Leve</option>
+                    <option value="Falta Grave">Falta Grave</option>
+                    <option value="Falta Eliminatoria">Falta Eliminatoria</option>
+                </select>
+                <div id="penalty-container1" class="tag-container"></div>
+            </td>
+            <td>
+                <select id="penalty-select2" onchange="addPenalty2()">
+                    <option value="">Seleccione</option>
+                    <option value="Aviso">Aviso</option>
+                    <option value="Falta Leve">Falta Leve</option>
+                    <option value="Falta Grave">Falta Grave</option>
+                    <option value="Falta Eliminatoria">Falta Eliminatoria</option>
+                </select>
+                <div id="penalty-container2" class="tag-container"></div>
+            </td>
+        </tr>
+        <tr>
+            <td><strong>PUNTUACIÓN FINAL</strong></td>
+            <td><input type="number" id="puntuacion-final-a-favor" value="0" readonly></td>
+            <td><input type="number" id="puntuacion-final-en-contra" value="0" readonly></td>
+        </tr>
+    </table>
 
-<tr class="header-row">
-
-<td>
-<strong>CATEGORÍA:</strong>
-<select id="category">
-<option value="">Seleccione</option>
-<option value="Secundaria">Secundaria</option>
-<option value="Bachillerato">Bachillerato</option>
-</select>
-</td>
-
-<td>
-<strong>RONDA:</strong>
-<select>
-<option>Seleccione</option>
-<option>Ronda 1</option>
-<option>Ronda 2</option>
-<option>Ronda 3</option>
-<option>Ronda 4</option>
-<option>Ronda 5</option>
-<option>Cuartos de Final</option>
-<option>Semifinal</option>
-<option>Final</option>
-</select>
-</td>
-
-<td>
-<strong>SALA:</strong>
-<select>
-<option>Seleccione</option>
-<option>Sala 1</option>
-<option>Sala 2</option>
-<option>Sala 3</option>
-<option>Sala 4</option>
-<option>Sala 5</option>
-<option>Sala 6</option>
-<option>Sala 7</option>
-<option>Sala 8</option>
-<option>Sala 9</option>
-<option>Sala 10</option>
-<option>Sala 11</option>
-<option>Sala 12</option>
-<option>Sala 13</option>
-<option>Sala 14</option>
-<option>Sala 15</option>
-<option>Sala 16</option>
-<option>Sala 17</option>
-<option>Sala 18</option>
-<option>Sala 19</option>
-<option>Sala 20</option>
-</select>
-</td>
-
-</tr>
-
-<tr>
-<td colspan="3">
-<strong>XUÍZ PRINCIPAL:</strong>
-<input type="text">
-</td>
-</tr>
-
-<tr>
-<td colspan="3">
-<strong>XUÍCES PANELISTAS:</strong>
-<input type="text">
-</td>
-</tr>
-
-<tr>
-<td colspan="3">
-<strong>EQUIPO A FAVOR:</strong>
-<input type="text" id="teamA">
-</td>
-</tr>
-
-<tr>
-<td colspan="3">
-<strong>EQUIPO EN CONTRA:</strong>
-<input type="text" id="teamB">
-</td>
-</tr>
-
-</table>
-
-        <table>
-            <tr>
-                <th>ÍTEM (do 0 ao 10)</th>
-                <th>A FAVOR</th>
-                <th>EN CONTRA</th>
-            </tr>
-            <tr>
-                <td>Establece un marco para o debate ou adáptase ao marco proposto polo outro equipo?</td>
-                <td>
-                    <select class="a-favor">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>Os argumentos presentados son relevantes e verosímiles?</td>
-                <td>
-                    <select class="a-favor">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>O conxunto do seu caso (liña argumental) é suficiente para probar a súa postura?</td>
-                <td>
-                    <select class="a-favor">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>As contrargumentacións efectuadas restan relevancia ou verosimilitude aos argumentos contrarios?</td>
-                <td>
-                    <select class="a-favor">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>Fai unha lectura adecuada do debate?</td>
-                <td>
-                    <select class="a-favor">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>Usa a linguaxe paraverbal de forma efectiva para reforzar a súa mensaxe?</td>
-                <td>
-                    <select class="a-favor">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>Emprega a linguaxe non verbal de forma adecuada para apoiar o seu discurso?</td>
-                <td>
-                    <select class="a-favor">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>Como de persuasivo foi no conxunto do debate? (x3)</td>
-                <td>
-                    <select class="a-favor persuasivo">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-                </td>
-                <td>
-                    <select class="en-contra persuasivo">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                    </select>
-            </tr>
-            <tr>
-                <td>Puntuación Total</td>
-                <td><input type="number" id="total-a-favor" value="0" readonly></td>
-                <td><input type="number" id="total-en-contra" value="0" readonly></td>
-            </tr>
-	     <tr> 
-    <td>PENALIZACIONES</td>
-    <td class="input-cell">
-        <select id="penalty-select1" onchange="addPenalty1()">
-            <option value="">Seleccione</option>
-            <option value="Aviso">Aviso</option>
-            <option value="Falta Leve">Falta Leve</option>
-            <option value="Falta Grave">Falta Grave</option>
-            <option value="Falta Eliminatoria">Falta Eliminatoria</option>
-        </select>
-        <div id="penalty-container1" class="tag-container"></div>
-    </td>
-    <td class="input-cell">
-        <select id="penalty-select2" onchange="addPenalty2()">
-            <option value="">Seleccione</option>
-            <option value="Aviso">Aviso</option>
-            <option value="Falta Leve">Falta Leve</option>
-            <option value="Falta Grave">Falta Grave</option>
-            <option value="Falta Eliminatoria">Falta Eliminatoria</option>
-        </select>
-        <div id="penalty-container2" class="tag-container"></div>
-    </td>
-</tr>
-
-	     
-              
-            <tr>
-                <td><strong>PUNTUACIÓN FINAL</strong> (descontadas penalizacións)</td>
-                <td><input type="number" id="puntuacion-final-a-favor" value="0" readonly></td>
-                <td><input type="number" id="puntuacion-final-en-contra" value="0" readonly></td>
-            </tr>
-        </table>
-
-      <div id="layout-container" style="display: flex; align-items: center; justify-content: space-between;">
-    <!-- Contenedor de Incidencias -->
-    <div id="incidencias-container" style="flex: 1;">
-        <h3 style="font-size: 16px;">Incidencias</h3>
-        <textarea id="incidencias" rows="4" style="width: 90%; font-size: 14px;"></textarea>
-    </div>
-
-    <!-- Contenedor del equipo ganador -->
-    <div id="ganador-container" style="flex: 1; text-align: center;">
-        <div id="winner-display" style="
-            padding: 15px 20px;
-            background-color: #0047AB;
-            color: white;
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-            display: inline-block;
-        ">
-            Empate
+    <div style="display: flex; align-items: flex-start; justify-content: space-between; gap: 20px;">
+        <div style="flex: 2;">
+            <h3 style="margin-top:0;">Incidencias</h3>
+            <textarea id="incidencias" rows="4"></textarea>
+        </div>
+        <div style="flex: 1; text-align: center;">
+            <div id="winner-display" style="padding: 20px; background-color: #0047AB; color: white; font-weight: bold; border-radius: 10px;">
+                Empate
+            </div>
+            <div class="btn-area" style="margin-top: 20px;">
+                <button onclick="descargarPDF()">Enviar e Descargar PDF</button>
+            </div>
         </div>
     </div>
-
-    <div>
-<button onclick="descargarPDF()">Enviar</button>
-</div>
-
-</div>
-
 </div>
 
 </body>
