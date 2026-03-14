@@ -127,11 +127,13 @@ function descargarPDF() {
     const nombreArchivo = `${ronda}_${sala}_${teamA}_vs_${teamB}.pdf`.replace(/\s+/g, '_');
 
     const elemento = document.querySelector(".container");
+    element.style.transform = "scale(0.80)"; 
+    element.style.transformOrigin = "top center";
     
     const opciones = {
         margin: [5, 5, 5, 5], // Margen mínimo para aprovechar espacio
         filename: nombreArchivo,
-        image: { type: 'jpeg', quality: 0.80 },
+        image: { type: 'jpeg', quality: 0.98 },
         html2canvas: { 
             scale: 2, 
             letterRendering: true,
