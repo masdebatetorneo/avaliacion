@@ -220,6 +220,8 @@ select.addEventListener('change', actualizarTotales);
 
 actualizarTotales();
 
+});
+
 function descargarPDF(){
 
 const ronda=document.getElementById("ronda").value.replace(/\s/g,"_");
@@ -243,8 +245,6 @@ html2pdf().set(opciones).from(elemento).save();
 
 }
 
-
-});
 
 </script>
 
